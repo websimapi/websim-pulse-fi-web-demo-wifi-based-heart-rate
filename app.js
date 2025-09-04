@@ -4,6 +4,7 @@ import { Biquad, detrend, estimateHR, normalize } from "./dsp.js";
 /* ...existing code... */
 const el = id => document.getElementById(id);
 const serialBtn = el("serialBtn");
+/* add BLE button */ const bleBtn = el("bleBtn");
 const fileInput = el("fileInput");
 const demoBtn = el("demoBtn");
 const bpmEl = el("bpm"), confEl = el("conf"), winEl = el("win");
@@ -14,6 +15,7 @@ let rawBuf = [];
 let filtBuf = [];
 let running = false;
 let serialPort, reader;
+/* BLE state */ let bleDevice=null, bleChar=null, bleLine="";
 
 const MAX_PLOT_S = 30;
 const maxPlotN = () => Math.floor(MAX_PLOT_S * fs);
@@ -104,6 +106,10 @@ serialBtn.addEventListener("click", async () => {
   }
 });
 
+bleBtn.addEventListener("click", async () => {
+  try { await connectBLE(); } catch(e){ console.error(e); alert("Bluetooth connection failed."); }
+});
+
 async function readSerialLoop() {
   let line = "";
   while (running && reader) {
@@ -160,5 +166,28 @@ demoBtn.addEventListener("click", async () => {
   }
 });
 
+async function connectBLE(){
+  if (!navigator.bluetooth) { alert("Web Bluetooth not supported on this device/browser."); return; }
+  const NUS_SERVICE   = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+  const NUS_CHAR_TX   = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notifications from device
+  bleDevice = await navigator.bluetooth.requestDevice({ filters:[{ services:[NUS_SERVICE] }] });
+  const server = await bleDevice.gatt.connect();
+  const service = await server.getPrimaryService(NUS_SERVICE);
+  bleChar = await service.getCharacteristic(NUS_CHAR_TX);
+  await bleChar.startNotifications();
+  bleChar.addEventListener("characteristicvaluechanged", onBleNotify);
+}
+
+function onBleNotify(ev){
+  const v = ev.target.value;
+  const text = new TextDecoder().decode(v);
+  bleLine += text;
+  const parts = bleLine.split(/\r?\n/);
+  bleLine = parts.pop() || "";
+  for (const p of parts) {
+    const s = parseSampleLine(p);
+    if (s) pushSamples(s);
+  }
+}
+
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-/* ...existing code... */
