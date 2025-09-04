@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- ...existing content... -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Pulse-Fi (Web Demo) — WiFi-based Heart Rate</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "chart.js": "https://esm.sh/chart.js@4.4.3"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- ...existing content... -->
+  <main class="wrap">
+    <header class="header">
+      <h1>Pulse‑Fi (Web Demo)</h1>
+      <p class="sub">Demonstrating heart‑rate estimation from WiFi signal fluctuations using low‑cost devices</p>
+    </header>
+
+    <section class="panel">
+      <h2>Acquire Signal</h2>
+      <div class="acquire">
+        <button id="serialBtn" class="btn">Connect ESP32 via WebSerial</button>
+        <div class="or">or</div>
+        <label class="file-label">
+          <input id="fileInput" type="file" accept=".json" />
+          <span class="btn">Load CSI sample (.json)</span>
+        </label>
+        <button id="demoBtn" class="btn outline">Use built‑in demo data</button>
+      </div>
+      <details class="note">
+        <summary>About this demo</summary>
+        <ul>
+          <li>Works with an ESP32 that streams CSI/RSSI magnitudes over serial (plain text or JSON lines).</li>
+          <li>If you don’t have hardware, use the built‑in demo or load a sample file to run the same pipeline.</li>
+          <li>Processing is on‑device in your browser. No data leaves your phone.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="panel grid">
+      <div>
+        <h2>Live Signal</h2>
+        <canvas id="signalChart" height="140"></canvas>
+      </div>
+      <div>
+        <h2>Filtered (0.7–3.0 Hz)</h2>
+        <canvas id="filteredChart" height="140"></canvas>
+      </div>
+    </section>
+
+    <section class="panel stats">
+      <div class="stat">
+        <div class="label">Heart Rate</div>
+        <div class="value"><span id="bpm">—</span> bpm</div>
+      </div>
+      <div class="stat">
+        <div class="label">Confidence</div>
+        <div class="value"><span id="conf">—</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Window</div>
+        <div class="value"><span id="win">5</span> s</div>
+      </div>
+    </section>
+
+    <section class="panel controls">
+      <div class="control">
+        <label for="fs">Sample rate (Hz)</label>
+        <input id="fs" type="number" min="10" max="500" step="1" value="100" />
+      </div>
+      <div class="control">
+        <label for="winSec">Analysis window (s)</label>
+        <input id="winSec" type="range" min="5" max="30" value="5" />
+      </div>
+      <div class="control">
+        <label for="hrMin">HR band (min bpm)</label>
+        <input id="hrMin" type="number" min="30" max="100" step="1" value="40" />
+      </div>
+      <div class="control">
+        <label for="hrMax">HR band (max bpm)</label>
+        <input id="hrMax" type="number" min="120" max="220" step="1" value="180" />
+      </div>
+    </section>
+
+    <section class="panel">
+      <details class="note">
+        <summary>How it works (brief)</summary>
+        <ol>
+          <li>Detrend and normalize the incoming WiFi magnitude stream.</li>
+          <li>Apply a biquad band‑pass (0.7–3.0 Hz) to isolate plausible heart activity.</li>
+          <li>Compute autocorrelation over lags mapping to the HR band and pick the dominant period.</li>
+          <li>Convert the peak lag to bpm and report a confidence from peak sharpness.</li>
+        </ol>
+      </details>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+  <!-- ...existing content... -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
