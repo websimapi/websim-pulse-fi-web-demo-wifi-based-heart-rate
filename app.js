@@ -1,4 +1,4 @@
-import Chart from "chart.js";
+import { Chart } from "chart.js";
 import { Biquad, detrend, estimateHR, normalize } from "./dsp.js";
 
 /* ...existing code... */
@@ -162,4 +162,3 @@ demoBtn.addEventListener("click", async () => {
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 /* ...existing code... */
-
