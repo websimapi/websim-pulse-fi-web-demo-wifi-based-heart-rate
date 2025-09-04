@@ -1,4 +1,4 @@
-import { Chart } from "chart.js";
+import Chart from "chart.js/auto";
 import { Biquad, detrend, estimateHR, normalize } from "./dsp.js";
 
 /* ...existing code... */
