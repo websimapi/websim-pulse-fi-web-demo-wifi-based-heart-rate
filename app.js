@@ -107,7 +107,7 @@ serialBtn.addEventListener("click", async () => {
 });
 
 bleBtn.addEventListener("click", async () => {
-  try { await connectBLE(); } catch(e){ console.error(e); alert("Bluetooth connection failed."); }
+  try { bleBtn.disabled = true; await connectBLE(); } catch(e){ console.error(e); alert("Bluetooth connection failed."); } finally { bleBtn.disabled = false; }
 });
 
 async function readSerialLoop() {
@@ -168,14 +168,17 @@ demoBtn.addEventListener("click", async () => {
 
 async function connectBLE(){
   if (!navigator.bluetooth) { alert("Web Bluetooth not supported on this device/browser."); return; }
-  const NUS_SERVICE   = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-  const NUS_CHAR_TX   = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notifications from device
-  bleDevice = await navigator.bluetooth.requestDevice({ filters:[{ services:[NUS_SERVICE] }] });
-  const server = await bleDevice.gatt.connect();
-  const service = await server.getPrimaryService(NUS_SERVICE);
-  bleChar = await service.getCharacteristic(NUS_CHAR_TX);
-  await bleChar.startNotifications();
-  bleChar.addEventListener("characteristicvaluechanged", onBleNotify);
+  const NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e", NUS_CHAR_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+  try {
+    if (bleDevice?.gatt?.connected) bleDevice.gatt.disconnect();
+    bleDevice = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [NUS_SERVICE] });
+    const server = await bleDevice.gatt.connect();
+    bleDevice.addEventListener("gattserverdisconnected", () => { console.warn("BLE disconnected"); });
+    const service = await server.getPrimaryService(NUS_SERVICE);
+    bleChar = await service.getCharacteristic(NUS_CHAR_TX);
+    await bleChar.startNotifications();
+    bleChar.addEventListener("characteristicvaluechanged", onBleNotify);
+  } catch (e) { throw e; }
 }
 
 function onBleNotify(ev){
